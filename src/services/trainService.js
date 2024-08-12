@@ -11,9 +11,9 @@ const getAllTrains = async () => {
 };
 
 // Service function to retrieve a specific train by ID
-const getTrainById = async (trainId) => {
+const getTrainById = async (train_id) => {
     try {
-        const train = await Train.findOne({ train_id: trainId });
+        const train = await Train.findOne({ train_id: train_id });
         if (!train) {
             throw new Error('Train not found');
         }
@@ -24,9 +24,9 @@ const getTrainById = async (trainId) => {
 };
 
 // Service function to retrieve location data for a specific train
-const getTrainLocations = async (trainId) => {
+const getTrainLocations = async (train_id) => {
     try {
-        const locations = await Train.find({ train_id: trainId }).sort({ timestamp: -1 });
+        const locations = await Train.find({ train_id: train_id }).sort({ timestamp: -1 });
         return locations;
     } catch (error) {
         throw new Error('Error fetching train locations: ' + error.message);

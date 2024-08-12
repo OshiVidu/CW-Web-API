@@ -1,10 +1,19 @@
 const mongoose = require('mongoose');
 
 const trainSchema = new mongoose.Schema({
- trainId: {
+ location_id: {
  type: String,
  required: true,
  unique: true,
+ },
+ train_id: {
+ type: String,
+ required: true,
+ unique: true,
+ },
+ timestamp: {
+ type: Number,
+ required: true,
  },
  location: {
  latitude: {
@@ -20,11 +29,7 @@ const trainSchema = new mongoose.Schema({
  type: Number,
  required: true,
  },
- heading: {
- type: String,
- required: true,
- },
- timestamp: {
+ direction: {
  type: Number,
  required: true,
  },
