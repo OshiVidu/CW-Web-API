@@ -41,9 +41,25 @@ const addTrainLocation = async (req, res) => {
     }
 };
 
+// Controller function to estimate time to reach user's location
+const estimateTime = async (req, res) => {
+    try {
+        const userLocation = req.query.userLocation;
+        const trainId = req.params.train_id;
+
+        const userCoordinates = await trainService.getUserCoordinates(userLocation);
+        const estimatedTime = await trainService.calculateEstimatedTime(trainId, userCoordinates);
+
+        res.status(200).json({ estimatedTime });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getAllTrains,
     getTrainById,
     getTrainLocations,
     addTrainLocation,
+    estimateTime,
 };

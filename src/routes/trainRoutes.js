@@ -5,6 +5,7 @@ const {
     getTrainById,
     getTrainLocations,
     addTrainLocation,
+    estimateTime,
 } = require('../controllers/trainController');
 
 router.get('/trains', getAllTrains);
@@ -13,5 +14,8 @@ router.get('/trains/:train_id/locations', getTrainLocations);
 
 // POST endpoint for ingesting train location data
 router.post('/data', addTrainLocation);
+
+// GET endpoint for estimating time to user's location
+router.get('/trains/:train_id/estimate-time', estimateTime);
 
 module.exports = router;
