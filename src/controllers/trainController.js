@@ -26,19 +26,19 @@ const getTrainLocations = async (req, res) => {
         const locations = await trainService.getTrainLocations(req.params.train_id);
         res.status(200).json(locations);
     } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+        res.status(500).json({ message: error.message });
+    }
 };
 
-// Controller function to handle POST request to ingest train location data
-const addTrainLocation = async (req, res) => {
+// Controller function to handle POST request to ingest multiple train location data
+const addTrainLocations = async (req, res) => {
     try {
-        const locationData = req.body;
-        const newLocation = await trainService.addTrainLocation(locationData);
-        res.status(201).json({ message: 'Location data added successfully', data: newLocation });
+        const locationsData = req.body; // Expecting an array of location objects
+        const newLocations = await trainService.addTrainLocations(locationsData);
+        res.status(201).json({ message: 'Location data added successfully', data: newLocations });
     } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+        res.status(500).json({ message: error.message });
+    }
 };
 
 // Controller function to estimate time to reach user's location
@@ -60,6 +60,6 @@ module.exports = {
     getAllTrains,
     getTrainById,
     getTrainLocations,
-    addTrainLocation,
+    addTrainLocations,
     estimateTime,
 };

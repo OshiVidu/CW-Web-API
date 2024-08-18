@@ -27,22 +27,25 @@ const getTrainById = async (train_id) => {
 // Service function to retrieve location data for a specific train
 const getTrainLocations = async (train_id) => {
     try {
-        const locations = await Train.find({ train_id: train_id }).sort({ timestamp: -1 });
+        const locations = await Train.find(
+            { train_id: train_id },
+            { 'location.latitude': 1, 'location.longitude': 1, _id: 0 }
+        ).sort({ timestamp: -1 });
         return locations;
     } catch (error) {
         throw new Error('Error fetching train locations: ' + error.message);
-    }
+    }
 };
 
-// Service function to save new location data
-const addTrainLocation = async (locationData) => {
+// Service function to save multiple location data
+const addTrainLocations = async (locationsData) => {
     try {
-        const newLocation = new Train(locationData);
-        await newLocation.save();
-        return newLocation;
+        // Use insertMany to save all location objects in the array at once
+        const newLocations = await Train.insertMany(locationsData);
+        return newLocations;
     } catch (error) {
-        throw new Error('Error adding train location: ' + error.message);
-    }
+        throw new Error('Error adding train locations: ' + error.message);
+    }
 };
 
 // Service function to get latitude and longitude of a user's location
@@ -129,7 +132,7 @@ module.exports = {
     getAllTrains,
     getTrainById,
     getTrainLocations,
-    addTrainLocation,
+    addTrainLocations,
     getUserCoordinates,
     calculateEstimatedTime,
 };
