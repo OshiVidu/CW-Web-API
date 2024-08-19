@@ -1,7 +1,6 @@
 const express = require('express');
 const morgan = require('morgan');
 const trainRoutes = require('./routes/trainRoutes');
-const luggageRoutes = require('./routes/luggageRoutes');  // New route for luggage transport
 const connectDB = require('./config/dbConfig');
 require('dotenv').config();
 
@@ -16,7 +15,6 @@ app.use(morgan('dev'));
 
 // Routes
 app.use('/api/v1', trainRoutes);
-app.use('/api/v1/luggage', luggageRoutes);  // Adding the luggage route
 
 // Error handling middleware
 app.use((err, req, res, next) => {

@@ -1,5 +1,7 @@
 const Train = require('../models/Train');
+const Luggage = require('../models/Luggage');
 const axios = require('axios');
+const crypto = require('crypto');
 
 // Service function to retrieve all trains
 const getAllTrains = async () => {
@@ -29,7 +31,7 @@ const getTrainLocations = async (train_id) => {
     try {
         const locations = await Train.find(
             { train_id: train_id },
-            { 'location.latitude': 1, 'location.longitude': 1, _id: 0 }
+            { 'latitude': 1, 'longitude': 1, _id: 0 }
         ).sort({ timestamp: -1 });
         return locations;
     } catch (error) {
@@ -55,76 +57,116 @@ const getUserCoordinates = async (userLocation) => {
         const response = await axios.get(
             `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(userLocation)}&key=${apiKey}`
         );
+        if (response.data.results.length === 0) {
+            throw new Error('No results found for the given address');
+        }
         const location = response.data.results[0].geometry.location;
+        console.log(`Fetched coordinates: ${location.lat}, ${location.lng}`);
         return {
             latitude: location.lat,
             longitude: location.lng
         };
     } catch (error) {
+        console.error('Error fetching user coordinates:', error.message);
         throw new Error('Error fetching user coordinates: ' + error.message);
     }
 };
 
-// Function to calculate distance using the Haversine formula
-const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const toRadians = (degree) => (degree * Math.PI) / 180;
-
-    const R = 6371; // Radius of the Earth in kilometers
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    const distance = R * c; // Distance in kilometers
-    return distance;
-};
-
-// Service function to calculate estimated time to reach user's location
-const calculateEstimatedTime = async (train_id, userCoordinates) => {
+// Service function to get location name from latitude and longitude
+const getLocationName = async (latitude, longitude) => {
     try {
-        const train = await Train.findOne({ train_id: train_id }).sort({ timestamp: -1 });
-        if (!train) {
-            throw new Error('Train not found');
-        }
-
-        const trainCoordinates = {
-            latitude: train.location.latitude,
-            longitude: train.location.longitude
-        };
-
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
         const response = await axios.get(
-            `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${trainCoordinates.latitude},${trainCoordinates.longitude}&destinations=${userCoordinates.latitude},${userCoordinates.longitude}&key=${apiKey}`
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
         );
+        
+        if (response.data.results.length === 0) {
+            throw new Error('No results found for the given coordinates');
+        }
 
-        const element = response.data.rows[0].elements[0];
+        // Get the formatted address from the first result
+        const locationName = response.data.results[0].formatted_address;
+        return locationName;
+    } catch (error) {
+        console.error('Error fetching location name:', error.message);
+        throw new Error('Error fetching location name: ' + error.message);
+    }
+};
 
-        if (element.status === 'OK') {
-            return element.duration.text;
-        } else if (element.status === 'ZERO_RESULTS') {
-            // Fallback to Haversine formula for direct distance calculation
-            const distanceInKm = calculateDistance(
-                trainCoordinates.latitude,
-                trainCoordinates.longitude,
-                userCoordinates.latitude,
-                userCoordinates.longitude
-            );
-
-            const trainSpeedInKmH = train.speed; // Assuming train speed is in km/h
-            const estimatedTimeInHours = distanceInKm / trainSpeedInKmH;
-            const estimatedTimeInMinutes = Math.round(estimatedTimeInHours * 60);
-
-            return `${estimatedTimeInMinutes} mins`;
+//Service function to get overall Journey time
+const getJourneyTime = async (departureLocation, arrivalLocation) => {
+    try {
+        const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+        const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(departureLocation)}&destination=${encodeURIComponent(arrivalLocation)}&key=${apiKey}`
+        );
+        
+        const route = response.data.routes[0];
+        if (route) {
+            const duration = route.legs[0].duration.text; // Estimated travel time
+            return duration;
         } else {
-            throw new Error(`Element status is not OK: ${element.status}`);
+            throw new Error('No route found');
         }
     } catch (error) {
-        throw new Error('Error calculating estimated time: ' + error.message);
+        throw new Error('Error fetching journey time: ' + error.message);
+    }
+};
+
+// Service function to save luggage transport details
+const saveLuggageDetails = async (luggageData) => {
+    try {
+        // Generate a random OTP
+        const otp = crypto.randomBytes(3).toString('hex');
+
+        // Create a new luggage document
+        const newLuggage = new Luggage({ ...luggageData, otp });
+        await newLuggage.save();
+
+        // Return the saved luggage document with the OTP
+        return { luggage: newLuggage, otp };
+    } catch (error) {
+        throw new Error('Error saving luggage details: ' + error.message);
+    }
+};
+
+const getAvailableTrainsByDate = async (date) => {
+    try {
+        const startDate = new Date(date);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(date);
+        endDate.setHours(23, 59, 59, 999);
+
+        console.log("Filtering trains between:", startDate, "and", endDate);
+
+        const availableTrains = await Train.find({
+            timestamp: { $gte: startDate, $lte: endDate }
+        });
+
+        console.log("Available trains found:", availableTrains);
+
+        return availableTrains;
+    } catch (error) {
+        throw new Error('Error fetching trains by date: ' + error.message);
+    }
+};
+
+// Service function to verify OTP and confirm pickup
+const verifyOtpAndConfirmPickup = async (otp) => {
+    try {
+        const luggage = await Luggage.findOne({ otp });
+
+        if (!luggage) {
+            throw new Error('Invalid OTP');
+        }
+
+        // Mark the luggage as picked up
+        luggage.isPickedUp = true;
+        await luggage.save();
+
+        return luggage;
+    } catch (error) {
+        throw new Error('Error verifying OTP: ' + error.message);
     }
 };
 
@@ -134,5 +176,9 @@ module.exports = {
     getTrainLocations,
     addTrainLocations,
     getUserCoordinates,
-    calculateEstimatedTime,
+    getLocationName,
+    getJourneyTime,
+    saveLuggageDetails,
+    getAvailableTrainsByDate,
+    verifyOtpAndConfirmPickup
 };
