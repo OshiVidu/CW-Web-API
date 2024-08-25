@@ -68,44 +68,10 @@ const getJourneyTime = async (req, res) => {
     }
 };
 
-const submitLuggageForm = async (req, res) => {
-    try {
-        const luggageData = req.body;
-
-        // Save luggage details
-        const { luggage, otp } = await trainService.saveLuggageDetails(luggageData);
-
-        // Get available trains based on the provided date
-        const availableTrains = await trainService.getAvailableTrainsByDate(luggageData.date);
-
-        res.status(201).json({
-            message: 'Luggage Transport Information Saved Successfully',
-            otp,
-            'All available trains based on the luggage booking date. Select the correct train according to your drop-off and pick-up locations. ': availableTrains
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
-// Controller function to verify OTP and confirm pickup
-const verifyOtp = async (req, res) => {
-    try {
-        const otp = req.query.otp;
-        const luggage = await trainService.verifyOtpAndConfirmPickup(otp);
-
-        res.status(200).json({ message: 'OTP match and Luggage transport is successfully done', luggage });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
 module.exports = {
     getAllTrains,
     getTrainById,
     getTrainLocations,
     addTrainLocations,
-    getJourneyTime,
-    submitLuggageForm,
-    verifyOtp
+    getJourneyTime
 };

@@ -13,7 +13,7 @@ connectDB();
 app.use(express.json());
 app.use(morgan('dev'));
 
-// Routes
+// Route
 app.use('/api/v1', trainRoutes);
 
 // Error handling middleware

@@ -6,13 +6,13 @@ const {
     getTrainLocations,
     addTrainLocations,
     getJourneyTime,
-    // estimateTime,
-    submitLuggageForm,
-    verifyOtp,
 } = require('../controllers/trainController');
 
+// GET all trains
 router.get('/trains', getAllTrains);
+// GET specific train
 router.get('/trains/:train_id', getTrainById);
+// GET live location details of specific train
 router.get('/trains/:train_id/locations', getTrainLocations);
 
 // POST endpoint for ingesting train location data
@@ -20,11 +20,5 @@ router.post('/data', addTrainLocations);
 
 //GET journey time
 router.get('/journey-time', getJourneyTime);
-
-// Route to handle luggage form submission
-router.post('/submit-luggage-form', submitLuggageForm);
-
-// Route to verify OTP and confirm pickup
-router.get('/verify-otp/:otp', verifyOtp);
 
 module.exports = router;

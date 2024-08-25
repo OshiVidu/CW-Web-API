@@ -1,5 +1,4 @@
 const Train = require('../models/Train');
-const Luggage = require('../models/Luggage');
 const axios = require('axios');
 const crypto = require('crypto');
 
@@ -26,7 +25,7 @@ const getTrainById = async (train_id) => {
     }
 };
 
-// Service function to retrieve location data for a specific train
+// Service function to retrieve live location data for a specific train
 const getTrainLocations = async (train_id) => {
     try {
         const locations = await Train.find(
@@ -50,7 +49,7 @@ const addTrainLocations = async (locationsData) => {
     }
 };
 
-// Service function to get latitude and longitude of a user's location
+// Service function to get latitude and longitude of a user's location (Help to get Journey time through google map API)
 const getUserCoordinates = async (userLocation) => {
     try {
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -93,7 +92,7 @@ const getLocationName = async (latitude, longitude) => {
     }
 };
 
-//Service function to get overall Journey time
+//Service function to get Journey time
 const getJourneyTime = async (departureLocation, arrivalLocation) => {
     try {
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -113,63 +112,6 @@ const getJourneyTime = async (departureLocation, arrivalLocation) => {
     }
 };
 
-// Service function to save luggage transport details
-const saveLuggageDetails = async (luggageData) => {
-    try {
-        // Generate a random OTP
-        const otp = crypto.randomBytes(3).toString('hex');
-
-        // Create a new luggage document
-        const newLuggage = new Luggage({ ...luggageData, otp });
-        await newLuggage.save();
-
-        // Return the saved luggage document with the OTP
-        return { luggage: newLuggage, otp };
-    } catch (error) {
-        throw new Error('Error saving luggage details: ' + error.message);
-    }
-};
-
-const getAvailableTrainsByDate = async (date) => {
-    try {
-        const startDate = new Date(date);
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(date);
-        endDate.setHours(23, 59, 59, 999);
-
-        console.log("Filtering trains between:", startDate, "and", endDate);
-
-        const availableTrains = await Train.find({
-            timestamp: { $gte: startDate, $lte: endDate }
-        });
-
-        console.log("Available trains found:", availableTrains);
-
-        return availableTrains;
-    } catch (error) {
-        throw new Error('Error fetching trains by date: ' + error.message);
-    }
-};
-
-// Service function to verify OTP and confirm pickup
-const verifyOtpAndConfirmPickup = async (otp) => {
-    try {
-        const luggage = await Luggage.findOne({ otp });
-
-        if (!luggage) {
-            throw new Error('Invalid OTP');
-        }
-
-        // Mark the luggage as picked up
-        luggage.isPickedUp = true;
-        await luggage.save();
-
-        return luggage;
-    } catch (error) {
-        throw new Error('Error verifying OTP: ' + error.message);
-    }
-};
-
 module.exports = {
     getAllTrains,
     getTrainById,
@@ -178,7 +120,4 @@ module.exports = {
     getUserCoordinates,
     getLocationName,
     getJourneyTime,
-    saveLuggageDetails,
-    getAvailableTrainsByDate,
-    verifyOtpAndConfirmPickup
 };
