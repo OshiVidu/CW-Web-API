@@ -8,6 +8,11 @@ const {
     getJourneyTime,
 } = require('../controllers/trainController');
 
+const {
+    addItem,
+    getItemAndTrainDetails,
+} = require('../controllers/itemController');
+
 // GET all trains
 router.get('/trains', getAllTrains);
 // GET specific train
@@ -20,5 +25,11 @@ router.post('/data', addTrainLocations);
 
 //GET journey time
 router.get('/journey-time', getJourneyTime);
+
+
+
+// Item routes
+router.post('/items', addItem);
+router.get('/items/:item_id', getItemAndTrainDetails);
 
 module.exports = router;
