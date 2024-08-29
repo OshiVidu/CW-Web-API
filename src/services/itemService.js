@@ -1,5 +1,5 @@
 const Item = require('../models/items');
-const Train = require('../models/Train');
+const Train = require('../models/IOTData');
 const axios = require('axios');
 
 // Function to get location name from latitude and longitude using Google Maps API

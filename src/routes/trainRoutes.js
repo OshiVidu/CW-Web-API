@@ -6,6 +6,7 @@ const {
     getTrainLocations,
     addTrainLocations,
     getJourneyTime,
+    getTrainHistory
 } = require('../controllers/trainController');
 
 const {
@@ -25,6 +26,9 @@ router.post('/data', addTrainLocations);
 
 //GET journey time
 router.get('/journey-time', getJourneyTime);
+
+// GET historical location data for a specific train
+router.get('/:train_id/history', getTrainHistory);
 
 
 

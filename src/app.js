@@ -1,6 +1,8 @@
 const express = require('express');
 const morgan = require('morgan');
+const cors = require('cors'); // Import the cors middleware
 const trainRoutes = require('./routes/trainRoutes');
+const gpsdataRoutes = require('./routes/gpsdataRoutes');
 const connectDB = require('./config/dbConfig');
 require('dotenv').config();
 
@@ -12,8 +14,10 @@ connectDB();
 // Middleware
 app.use(express.json());
 app.use(morgan('dev'));
+app.use(cors()); // Use the cors middleware
 
-// Route
+// Routes
+app.use('/api', gpsdataRoutes);
 app.use('/api/v1', trainRoutes);
 
 // Error handling middleware

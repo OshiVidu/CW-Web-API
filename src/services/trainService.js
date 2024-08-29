@@ -1,21 +1,47 @@
-const Train = require('../models/Train');
 const axios = require('axios');
 const crypto = require('crypto');
+const IOTData = require('../models/IOTData');
 
 // Service function to retrieve all trains
-const getAllTrains = async () => {
+const getAllTrains = async (date) => {
     try {
-        const trains = await Train.find({});
+        const filter = {};
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            filter.timestamp = {
+                $gte: startDate,
+                $lt: endDate
+            };
+        }
+
+        const trains = await IOTData.find(filter);
         return trains;
     } catch (error) {
         throw new Error('Error fetching all trains: ' + error.message);
     }
 };
 
+
 // Service function to retrieve a specific train by ID
-const getTrainById = async (train_id) => {
+const getTrainById = async (train_id, date) => {
     try {
-        const train = await Train.findOne({ train_id: train_id });
+        const filter = { train_id };
+
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            filter.timestamp = {
+                $gte: startDate,
+                $lt: endDate
+            };
+        }
+
+        const train = await IOTData.findOne(filter);
         if (!train) {
             throw new Error('Train not found');
         }
@@ -25,24 +51,48 @@ const getTrainById = async (train_id) => {
     }
 };
 
-// Service function to retrieve live location data for a specific train
-const getTrainLocations = async (train_id) => {
+
+// Service function to retrieve live location data with location names for a specific train
+const getTrainLocations = async (train_id, date) => {
     try {
-        const locations = await Train.find(
-            { train_id: train_id },
-            { 'latitude': 1, 'longitude': 1, _id: 0 }
-        ).sort({ timestamp: -1 });
-        return locations;
+        const filter = { train_id };
+
+        if (date) {
+            const startDate = new Date(date);
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 1);
+
+            filter.timestamp = {
+                $gte: startDate,
+                $lt: endDate
+            };
+        }
+
+        const locations = await IOTData.find(filter, { 'latitude': 1, 'longitude': 1, _id: 0 }).sort({ timestamp: -1 });
+
+        const locationPromises = locations.map(async loc => {
+            const locationName = await getLocationName(loc.latitude, loc.longitude);
+            return {
+                latitude: loc.latitude,
+                longitude: loc.longitude,
+                locationName: locationName
+            };
+        });
+
+        const locationsWithNames = await Promise.all(locationPromises);
+        return locationsWithNames;
+
     } catch (error) {
         throw new Error('Error fetching train locations: ' + error.message);
-    }
+    }
 };
+
 
 // Service function to save multiple location data
 const addTrainLocations = async (locationsData) => {
     try {
         // Use insertMany to save all location objects in the array at once
-        const newLocations = await Train.insertMany(locationsData);
+        const newLocations = await IOTData.insertMany(locationsData);
         return newLocations;
     } catch (error) {
         throw new Error('Error adding train locations: ' + error.message);
@@ -71,7 +121,8 @@ const getUserCoordinates = async (userLocation) => {
     }
 };
 
-// Service function to get location name from latitude and longitude
+
+// Service function to get location name from latitude and longitude (based on Google Maps API)
 const getLocationName = async (latitude, longitude) => {
     try {
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -92,14 +143,17 @@ const getLocationName = async (latitude, longitude) => {
     }
 };
 
-//Service function to get Journey time
+
 const getJourneyTime = async (departureLocation, arrivalLocation) => {
     try {
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
         const response = await axios.get(
             `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(departureLocation)}&destination=${encodeURIComponent(arrivalLocation)}&key=${apiKey}`
         );
-        
+
+        // Log the full response for debugging
+        console.log(response.data);
+
         const route = response.data.routes[0];
         if (route) {
             const duration = route.legs[0].duration.text; // Estimated travel time
