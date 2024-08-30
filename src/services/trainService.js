@@ -143,7 +143,7 @@ const getLocationName = async (latitude, longitude) => {
     }
 };
 
-
+//Service function to get journey time between two locations
 const getJourneyTime = async (departureLocation, arrivalLocation) => {
     try {
         const apiKey = process.env.GOOGLE_MAPS_API_KEY;
