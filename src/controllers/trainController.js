@@ -45,7 +45,7 @@ const getTrainById = async (req, res) => {
             };
         }
 
-        const train = await IOTData.findOne(filter);
+        const train = await IOTData.find(filter);
         if (!train) {
             return res.status(404).json({ message: 'Train not found' });
         }
