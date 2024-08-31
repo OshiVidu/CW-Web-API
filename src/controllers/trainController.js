@@ -19,7 +19,7 @@ const getAllTrains = async (req, res) => {
             };
         }
 
-        const trains = await IOTData.find(filter);
+        const trains = await IOTData.findOne(filter);
         res.json(trains);
     } catch (error) {
         res.status(500).json({ error: error.message });

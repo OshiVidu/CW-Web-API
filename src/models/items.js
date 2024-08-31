@@ -7,10 +7,10 @@ const itemSchema = new mongoose.Schema({
         default: uuidv4,
         unique: true,
     },
-    name: {
-        type: String,
-        required: true,
-    },
+    // name: {
+    //     type: String,
+    //     required: true,
+    // },
     train_id: {
         type: String,
         required: true,

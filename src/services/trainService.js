@@ -41,7 +41,7 @@ const getTrainById = async (train_id, date) => {
             };
         }
 
-        const train = await IOTData.find(filter);
+        const train = await IOTData.findOne(filter);
         if (!train) {
             throw new Error('Train not found');
         }
